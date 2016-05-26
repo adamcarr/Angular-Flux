@@ -6,22 +6,12 @@ namespace AngularFlux.Controllers {
         create: Function;
         newTodoName: string;
     }
-    
-    enum TestActionTypes {
-        test1,
-        test2
-    }
-    
-    interface ICustomPayload extends AngularFlux.Services.IDispatchPayload<TestActionTypes> {
-        blah: string;
-    }
 
     class MainController {
         constructor(
             $scope: IMainControllerScope, 
             dispatcher: AngularFlux.Services.IDispatcher<AngularFlux.Services.TodoActions>,
-            todoStore: AngularFlux.Services.ITodoStore,
-            $interval: ng.IIntervalService
+            todoStore: AngularFlux.Services.ITodoStore
         ) {
             $scope.greeting = "Howdy Peeps!!!";
             

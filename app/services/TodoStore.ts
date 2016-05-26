@@ -6,23 +6,23 @@ namespace AngularFlux.Services {
         isUpdating: boolean;
         getTodoActions(): ITodoAction[];
     }
-    
+
     export interface ITodoAction {
         name: string;
-        execute: (name: string) => void;
+        execute: () => void;
     }
-    
+
     export interface ITodoStore {
         state: ITodo[];
     }
-    
+
     function fiftyFifty(): boolean {
         return Math.random() > .5;
     }
-    
+
     class Todo implements ITodo {
         private actions: ITodoAction[] = [];
-        
+
         constructor(
             private dispatcher: IDispatcher<TodoActions>,
             public name: string,
@@ -41,7 +41,7 @@ namespace AngularFlux.Services {
                     }
                 })
             }
-            
+
             if (fiftyFifty()) {
                 this.actions.push({
                     name: TodoActions[TodoActions.TOGGLE_BOLD],
@@ -53,7 +53,7 @@ namespace AngularFlux.Services {
                     }
                 })
             }
-            
+
             if (fiftyFifty()) {
                 this.actions.push({
                     name: TodoActions[TodoActions.TOGGLE_DONE],
@@ -66,12 +66,12 @@ namespace AngularFlux.Services {
                 })
             }
         }
-        
+
         public getTodoActions(): ITodoAction[] {
             return this.actions;
         }
     }
-    
+
     export enum TodoActions {
         TOGGLE_DONE,
         TOGGLE_DONE_COMPLETE,
@@ -82,7 +82,7 @@ namespace AngularFlux.Services {
         CREATE,
         CREATE_COMPLETE
     }
-    
+
     type TodoPayload = AngularFlux.Services.IDispatchPayload<TodoActions>;
     interface ITodoToggleDonePayload extends TodoPayload {
         name: string;
@@ -96,9 +96,9 @@ namespace AngularFlux.Services {
     interface ITodoCreatePayload extends TodoPayload {
         name: string;
     }
-    
+
     function isTodoToggleBoldPayload(payload: TodoPayload): payload is ITodoToggleBoldPayload {
-        return payload.actionType === TodoActions.TOGGLE_BOLD || 
+        return payload.actionType === TodoActions.TOGGLE_BOLD ||
             payload.actionType === TodoActions.TOGGLE_BOLD_COMPLETE;
     }
     function isTodoToggleDonePayload(payload: TodoPayload): payload is ITodoToggleDonePayload {
@@ -113,28 +113,28 @@ namespace AngularFlux.Services {
         return payload.actionType === TodoActions.CREATE ||
             payload.actionType === TodoActions.CREATE_COMPLETE;
     }
-    
+
     function randomDelay($timeout: ng.ITimeoutService, callback: (...args) => any): void {
-        $timeout(callback, Math.random()*5000);
+        $timeout(callback, Math.random() * 5000);
     }
-    
+
     class TodoStore implements ITodoStore {
         state: ITodo[] = [];
-        
+
         constructor(
             private $timeout: ng.ITimeoutService,
-            private dispatcher: IDispatcher<TodoActions>, 
+            private dispatcher: IDispatcher<TodoActions>,
             $rootScope: ng.IRootScopeService) {
             dispatcher.register($rootScope, (payload) => this.on(payload));
         }
-        
+
         private on(payload: TodoPayload) {
             if (isTodoCreatePayload(payload)) return this.onCreate(payload);
             if (isTodoDeletePayload(payload)) return this.onDelete(payload);
             if (isTodoToggleBoldPayload(payload)) return this.onToggleBold(payload);
             if (isTodoToggleDonePayload(payload)) return this.onToggleDone(payload);
         }
-        
+
         private onToggleBold(payload: ITodoToggleBoldPayload) {
             if (payload.actionType === TodoActions.TOGGLE_BOLD) {
                 randomDelay(this.$timeout, () => this.dispatcher.dispatch({
@@ -142,17 +142,17 @@ namespace AngularFlux.Services {
                     name: payload.name
                 }));
                 this.setIsUpdating(payload.name);
-            
+
                 this.state.forEach((todo) => {
                     if (todo.name === payload.name) {
                         todo.isBold = !todo.isBold;
                     }
-                }); 
+                });
                 return;
             }
             this.setIsUpdating(payload.name, false);
         }
-        
+
         private onToggleDone(payload: ITodoToggleDonePayload) {
             if (payload.actionType === TodoActions.TOGGLE_DONE) {
                 randomDelay(this.$timeout, () => this.dispatcher.dispatch({
@@ -160,17 +160,17 @@ namespace AngularFlux.Services {
                     name: payload.name
                 }));
                 this.setIsUpdating(payload.name);
-            
+
                 this.state.forEach((todo) => {
                     if (todo.name === payload.name) {
                         todo.isDone = !todo.isDone;
                     }
-                }); 
+                });
                 return;
             }
             this.setIsUpdating(payload.name, false);
         }
-        
+
         private onDelete(payload: ITodoDeletePayload) {
             if (payload.actionType === TodoActions.DELETE) {
                 randomDelay(this.$timeout, () => this.dispatcher.dispatch({
@@ -180,17 +180,17 @@ namespace AngularFlux.Services {
                 this.setIsUpdating(payload.name);
                 return;
             }
-            
+
             let indexesToDelete = [];
             this.state.forEach((todo, index) => {
                 if (todo.name === payload.name) {
                     indexesToDelete.unshift(index);
                 }
             });
-            
+
             indexesToDelete.forEach((i) => this.state.splice(i, 1));
         }
-        
+
         private onCreate(payload: ITodoCreatePayload) {
             if (payload.actionType === TodoActions.CREATE) {
                 this.state.push(new Todo(this.dispatcher, payload.name, false, false, true));
@@ -201,10 +201,10 @@ namespace AngularFlux.Services {
                 this.setIsUpdating(payload.name);
                 return;
             }
-            
+
             this.setIsUpdating(payload.name, false);
         }
-        
+
         private setIsUpdating(name: string, isUpdating: boolean = true) {
             this.state.forEach((todo) => {
                 if (todo.name === name) {
@@ -213,6 +213,6 @@ namespace AngularFlux.Services {
             });
         }
     }
-    
+
     Module.service('todoStore', TodoStore);
 }
