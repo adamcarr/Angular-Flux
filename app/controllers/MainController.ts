@@ -10,8 +10,7 @@ namespace AngularFlux.Controllers {
     class MainController {
         constructor(
             $scope: IMainControllerScope, 
-            todoDispatcher: Flux.Dispatcher<AngularFlux.Services.TodoPayload>,
-            todoStore: AngularFlux.Services.ITodoStore // only pulled in here to create the instance.
+            todoDispatcher: Flux.Dispatcher<AngularFlux.Services.TodoPayload>
         ) {
             $scope.greeting = "Amazing to-dos!!!";
             

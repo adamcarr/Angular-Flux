@@ -123,9 +123,13 @@ namespace AngularFlux.Services {
 
     class TodoStore implements ITodoStore {
         state: ITodo[] = [];
+        todoDispatcher: Flux.Dispatcher<TodoPayload>;
 
-        constructor(private todoDispatcher: Flux.Dispatcher<TodoPayload>) {
-            todoDispatcher.register((payload) => this.on(payload));
+        constructor() {
+            angular.injector(['services']).invoke((todoDispatcher: Flux.Dispatcher<TodoPayload>) => {
+                this.todoDispatcher = todoDispatcher;
+                this.todoDispatcher.register((payload) => this.on(payload));
+            });
         }
 
         private on(payload: TodoPayload) {
@@ -223,6 +227,6 @@ namespace AngularFlux.Services {
             }, 0);
         }
     }
-
-    Module.service('todoStore', TodoStore);
+    
+    new TodoStore();
 }
