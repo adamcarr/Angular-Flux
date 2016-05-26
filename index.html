@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="bower_components/angular/angular.js"></script>
+        <script src="dist/app.js"></script>
+        <style>
+            ul, li {
+                display: inline-block;
+            }
+            .updating {
+                color: red;
+            }
+            
+            .bold {
+                font-weight: bold;
+            }
+            
+            .done {
+                text-decoration: line-through;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container" ng-app="main">
+            <div ng-controller="mainCtrl">
+                <h1>{{greeting}}</h1>
+                <hr>
+                <form>
+                <input type="text" ng-model="newTodoName" />
+                <button ng-click="create()">Create Todo</button>
+                </form>
+                <hr>
+                <div ng-repeat="todo in todos track by $index">
+                    <span ng-class="{ 'updating': todo.isUpdating, 'bold': todo.isBold, 'done': todo.isDone }">{{todo.name}}</span>
+                    <ul>
+                        <li ng-repeat="action in todo.getTodoActions() track by action.name">
+                            <button ng-click="action.execute()">{{action.name}}</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

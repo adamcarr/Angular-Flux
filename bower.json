@@ -1,0 +1,21 @@
+{
+  "name": "angular-flux",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Adam Carr"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "^1.5.5"
+  }
+}
