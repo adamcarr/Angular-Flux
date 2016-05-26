@@ -10,19 +10,29 @@ namespace AngularFlux.Controllers {
     class MainController {
         constructor(
             $scope: IMainControllerScope, 
-            dispatcher: AngularFlux.Services.IDispatcher<AngularFlux.Services.TodoActions>,
-            todoStore: AngularFlux.Services.ITodoStore
+            todoDispatcher: Flux.Dispatcher<AngularFlux.Services.TodoPayload>,
+            todoStore: AngularFlux.Services.ITodoStore // only pulled in here to create the instance.
         ) {
-            $scope.greeting = "Howdy Peeps!!!";
+            $scope.greeting = "Amazing to-dos!!!";
             
-            $scope.$watch('todoStore.state', function () {
-                $scope.todos = todoStore.state;
+            const onStateUpdated = todoDispatcher.register((payload: AngularFlux.Services.ITodoStateUpdatedPayload) => {
+                if (payload.actionType !== AngularFlux.Services.TodoActions.STATE_UPDATED) {
+                    return;
+                }
+                
+                $scope.$apply(() => {
+                    $scope.todos = payload.state;
+                });
             });
+            
+            $scope.$on('$destroy', () => {
+                todoDispatcher.unregister(onStateUpdated);
+            })
             
             $scope.create = () => {
                 if ($scope.newTodoName) {
                     // This should be wrapped in a helper function
-                    dispatcher.dispatch({
+                    todoDispatcher.dispatch(<AngularFlux.Services.TodoPayload>{
                         actionType: AngularFlux.Services.TodoActions.CREATE,
                         name: $scope.newTodoName
                     });

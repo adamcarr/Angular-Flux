@@ -24,7 +24,7 @@ namespace AngularFlux.Services {
         private actions: ITodoAction[] = [];
 
         constructor(
-            private dispatcher: IDispatcher<TodoActions>,
+            private dispatcher: Flux.Dispatcher<TodoPayload>,
             public name: string,
             public isDone: boolean = false,
             public isBold: boolean = false,
@@ -34,7 +34,7 @@ namespace AngularFlux.Services {
                 this.actions.push({
                     name: TodoActions[TodoActions.DELETE],
                     execute: () => {
-                        this.dispatcher.dispatch({
+                        this.dispatcher.dispatch(<TodoPayload>{
                             actionType: TodoActions.DELETE,
                             name: this.name
                         });
@@ -46,7 +46,7 @@ namespace AngularFlux.Services {
                 this.actions.push({
                     name: TodoActions[TodoActions.TOGGLE_BOLD],
                     execute: () => {
-                        this.dispatcher.dispatch({
+                        this.dispatcher.dispatch(<TodoPayload>{
                             actionType: TodoActions.TOGGLE_BOLD,
                             name: this.name
                         });
@@ -58,7 +58,7 @@ namespace AngularFlux.Services {
                 this.actions.push({
                     name: TodoActions[TodoActions.TOGGLE_DONE],
                     execute: () => {
-                        this.dispatcher.dispatch({
+                        this.dispatcher.dispatch(<TodoPayload>{
                             actionType: TodoActions.TOGGLE_DONE,
                             name: this.name
                         });
@@ -80,21 +80,24 @@ namespace AngularFlux.Services {
         DELETE,
         DELETE_COMPLETE,
         CREATE,
-        CREATE_COMPLETE
+        CREATE_COMPLETE,
+        STATE_UPDATED
     }
 
-    type TodoPayload = AngularFlux.Services.IDispatchPayload<TodoActions>;
-    interface ITodoToggleDonePayload extends TodoPayload {
+    export interface ITodoToggleDonePayload extends TodoPayload {
         name: string;
     }
-    interface ITodoToggleBoldPayload extends TodoPayload {
+    export interface ITodoToggleBoldPayload extends TodoPayload {
         name: string;
     }
-    interface ITodoDeletePayload extends TodoPayload {
+    export interface ITodoDeletePayload extends TodoPayload {
         name: string;
     }
-    interface ITodoCreatePayload extends TodoPayload {
+    export interface ITodoCreatePayload extends TodoPayload {
         name: string;
+    }
+    export interface ITodoStateUpdatedPayload extends TodoPayload {
+        state: ITodo[];
     }
 
     function isTodoToggleBoldPayload(payload: TodoPayload): payload is ITodoToggleBoldPayload {
@@ -114,30 +117,27 @@ namespace AngularFlux.Services {
             payload.actionType === TodoActions.CREATE_COMPLETE;
     }
 
-    function randomDelay($timeout: ng.ITimeoutService, callback: (...args) => any): void {
-        $timeout(callback, Math.random() * 5000);
+    function randomDelay(callback: (...args) => any): void {
+        setTimeout(callback, Math.random() * 5000);
     }
 
     class TodoStore implements ITodoStore {
         state: ITodo[] = [];
 
-        constructor(
-            private $timeout: ng.ITimeoutService,
-            private dispatcher: IDispatcher<TodoActions>,
-            $rootScope: ng.IRootScopeService) {
-            dispatcher.register($rootScope, (payload) => this.on(payload));
+        constructor(private todoDispatcher: Flux.Dispatcher<TodoPayload>) {
+            todoDispatcher.register((payload) => this.on(payload));
         }
 
         private on(payload: TodoPayload) {
-            if (isTodoCreatePayload(payload)) return this.onCreate(payload);
-            if (isTodoDeletePayload(payload)) return this.onDelete(payload);
-            if (isTodoToggleBoldPayload(payload)) return this.onToggleBold(payload);
-            if (isTodoToggleDonePayload(payload)) return this.onToggleDone(payload);
+            if (isTodoCreatePayload(payload)) return this.triggerStateUpdated(() => this.onCreate(payload));
+            if (isTodoDeletePayload(payload)) return this.triggerStateUpdated(() => this.onDelete(payload));
+            if (isTodoToggleBoldPayload(payload)) return this.triggerStateUpdated(() => this.onToggleBold(payload));
+            if (isTodoToggleDonePayload(payload)) return this.triggerStateUpdated(() => this.onToggleDone(payload));
         }
 
         private onToggleBold(payload: ITodoToggleBoldPayload) {
             if (payload.actionType === TodoActions.TOGGLE_BOLD) {
-                randomDelay(this.$timeout, () => this.dispatcher.dispatch({
+                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
                     actionType: TodoActions.TOGGLE_BOLD_COMPLETE,
                     name: payload.name
                 }));
@@ -155,7 +155,7 @@ namespace AngularFlux.Services {
 
         private onToggleDone(payload: ITodoToggleDonePayload) {
             if (payload.actionType === TodoActions.TOGGLE_DONE) {
-                randomDelay(this.$timeout, () => this.dispatcher.dispatch({
+                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
                     actionType: TodoActions.TOGGLE_DONE_COMPLETE,
                     name: payload.name
                 }));
@@ -173,7 +173,7 @@ namespace AngularFlux.Services {
 
         private onDelete(payload: ITodoDeletePayload) {
             if (payload.actionType === TodoActions.DELETE) {
-                randomDelay(this.$timeout, () => this.dispatcher.dispatch({
+                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
                     actionType: TodoActions.DELETE_COMPLETE,
                     name: payload.name
                 }));
@@ -193,8 +193,8 @@ namespace AngularFlux.Services {
 
         private onCreate(payload: ITodoCreatePayload) {
             if (payload.actionType === TodoActions.CREATE) {
-                this.state.push(new Todo(this.dispatcher, payload.name, false, false, true));
-                randomDelay(this.$timeout, () => this.dispatcher.dispatch({
+                this.state.push(new Todo(this.todoDispatcher, payload.name, false, false, true));
+                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
                     actionType: TodoActions.CREATE_COMPLETE,
                     name: payload.name
                 }));
@@ -211,6 +211,16 @@ namespace AngularFlux.Services {
                     todo.isUpdating = isUpdating;
                 }
             });
+        }
+        
+        private triggerStateUpdated(callback: Function) {
+            callback();
+            setTimeout(() => {
+                this.todoDispatcher.dispatch(<ITodoStateUpdatedPayload>{
+                    actionType: TodoActions.STATE_UPDATED,
+                    state: this.state
+                });
+            }, 0);
         }
     }
 
