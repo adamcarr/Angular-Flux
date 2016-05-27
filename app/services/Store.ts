@@ -32,8 +32,7 @@ namespace AngularFlux.Services {
                 preStateChangedAction();
             }
             setTimeout(() => Object.keys(this.stateChangedListeners)
-                .map(key => this.stateChangedListeners[key])
-                .forEach(callback => callback(this.state))
+                .forEach(key => this.stateChangedListeners[key](this.state))
                 , 0);
         }
     }

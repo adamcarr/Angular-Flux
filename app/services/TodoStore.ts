@@ -12,8 +12,6 @@ namespace AngularFlux.Services {
         execute: () => void;
     }
 
-    
-
     export type TodoStoreState = ITodo[];
     export interface ITodoStore extends IStore<TodoStoreState> {
     }
@@ -137,73 +135,74 @@ namespace AngularFlux.Services {
         }
 
         private onToggleBold(payload: ITodoToggleBoldPayload) {
-            if (payload.actionType === TodoActions.TOGGLE_BOLD) {
-                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
-                    actionType: TodoActions.TOGGLE_BOLD_COMPLETE,
-                    name: payload.name
-                }));
-                this.setIsUpdating(payload.name);
-
-                this.state.forEach((todo) => {
-                    if (todo.name === payload.name) {
-                        todo.isBold = !todo.isBold;
-                    }
-                });
+            if (payload.actionType === TodoActions.TOGGLE_BOLD_COMPLETE) {
+                this.setIsUpdating(payload.name, false);
                 return;
             }
-            this.setIsUpdating(payload.name, false);
+            
+            randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
+                actionType: TodoActions.TOGGLE_BOLD_COMPLETE,
+                name: payload.name
+            }));
+            this.setIsUpdating(payload.name);
+
+            this.state.forEach((todo) => {
+                if (todo.name === payload.name) {
+                    todo.isBold = !todo.isBold;
+                }
+            });
         }
 
         private onToggleDone(payload: ITodoToggleDonePayload) {
-            if (payload.actionType === TodoActions.TOGGLE_DONE) {
-                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
-                    actionType: TodoActions.TOGGLE_DONE_COMPLETE,
-                    name: payload.name
-                }));
-                this.setIsUpdating(payload.name);
-
-                this.state.forEach((todo) => {
-                    if (todo.name === payload.name) {
-                        todo.isDone = !todo.isDone;
-                    }
-                });
-                return;
+            if (payload.actionType === TodoActions.TOGGLE_DONE_COMPLETE) {
+                this.setIsUpdating(payload.name, false);
             }
-            this.setIsUpdating(payload.name, false);
+            
+            randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
+                actionType: TodoActions.TOGGLE_DONE_COMPLETE,
+                name: payload.name
+            }));
+            this.setIsUpdating(payload.name);
+
+            this.state.forEach((todo) => {
+                if (todo.name === payload.name) {
+                    todo.isDone = !todo.isDone;
+                }
+            });
         }
 
         private onDelete(payload: ITodoDeletePayload) {
-            if (payload.actionType === TodoActions.DELETE) {
-                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
-                    actionType: TodoActions.DELETE_COMPLETE,
-                    name: payload.name
-                }));
-                this.setIsUpdating(payload.name);
+            if (payload.actionType === TodoActions.DELETE_COMPLETE) {
+                let indexesToDelete = [];
+                this.state.forEach((todo, index) => {
+                    if (todo.name === payload.name) {
+                        indexesToDelete.unshift(index);
+                    }
+                });
+
+                indexesToDelete.forEach((i) => this.state.splice(i, 1));
                 return;
             }
-
-            let indexesToDelete = [];
-            this.state.forEach((todo, index) => {
-                if (todo.name === payload.name) {
-                    indexesToDelete.unshift(index);
-                }
-            });
-
-            indexesToDelete.forEach((i) => this.state.splice(i, 1));
+                
+            randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
+                actionType: TodoActions.DELETE_COMPLETE,
+                name: payload.name
+            }));
+            this.setIsUpdating(payload.name);
         }
 
         private onCreate(payload: ITodoCreatePayload) {
-            if (payload.actionType === TodoActions.CREATE) {
-                this.state.push(new Todo(this.todoDispatcher, payload.name, false, false, true));
-                randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
-                    actionType: TodoActions.CREATE_COMPLETE,
-                    name: payload.name
-                }));
-                this.setIsUpdating(payload.name);
+            if (payload.actionType === TodoActions.CREATE_COMPLETE) {
+                this.setIsUpdating(payload.name, false);
                 return;
             }
-
-            this.setIsUpdating(payload.name, false);
+            
+            this.state.push(new Todo(this.todoDispatcher, payload.name, false, false, true));
+            randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
+                actionType: TodoActions.CREATE_COMPLETE,
+                name: payload.name
+            }));
+            this.setIsUpdating(payload.name);
         }
 
         private setIsUpdating(name: string, isUpdating: boolean = true) {
