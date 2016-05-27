@@ -27,12 +27,13 @@ namespace AngularFlux.Services {
             delete this.stateChangedListeners[id];
         }
         
-        protected triggerStateChanged(preStateChangedAction?: Function): void {
+        protected triggerStateChanged(stateCloner: (state: TState) => TState, preStateChangedAction?: Function): void {
             if (preStateChangedAction) {
                 preStateChangedAction();
             }
+            const clonedState = stateCloner(this.state);
             setTimeout(() => Object.keys(this.stateChangedListeners)
-                .forEach(key => this.stateChangedListeners[key](this.state))
+                .forEach(key => this.stateChangedListeners[key](clonedState))
                 , 0);
         }
     }

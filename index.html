@@ -31,11 +31,19 @@
                 <button ng-click="create()">Create Todo</button>
                 </form>
                 <hr>
+                <blockquote>
+                    Notice how each todo has a "Toggle done locally" button. This will toggle the todo's done state locally. Next action taken
+                    that is pushed to the dispatcher will overwrite this. You can see this by toggling it locally on one todo, then take an action on 
+                    another todo that isn't "local".
+                </blockquote>
                 <div ng-repeat="todo in todos track by $index">
                     <span ng-class="{ 'updating': todo.isUpdating, 'bold': todo.isBold, 'done': todo.isDone }">{{todo.name}}</span>
                     <ul>
                         <li ng-repeat="action in todo.getTodoActions() track by action.name">
                             <button ng-disabled="todo.isUpdating" ng-click="action.execute()">{{action.name}}</button>
+                        </li>
+                        <li>
+                            <button title="Notice how this will toggle state locally but next action that isn't done locally will revert this change." ng-click="todo.isDone = !todo.isDone">Toggle done locally</button>
                         </li>
                     </ul>
                 </div>

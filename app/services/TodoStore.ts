@@ -28,42 +28,47 @@ namespace AngularFlux.Services {
             public name: string,
             public isDone: boolean = false,
             public isBold: boolean = false,
-            public isUpdating: boolean = false
+            public isUpdating: boolean = false,
+            actions?: ITodoAction[]
         ) {
-            if (fiftyFifty()) {
-                this.actions.push({
-                    name: TodoActions[TodoActions.DELETE],
-                    execute: () => {
-                        this.dispatcher.dispatch(<TodoPayload>{
-                            actionType: TodoActions.DELETE,
-                            name: this.name
-                        });
-                    }
-                })
-            }
+            if (actions) {
+                this.actions = actions;
+            } else {
+                if (fiftyFifty()) {
+                    this.actions.push({
+                        name: TodoActions[TodoActions.DELETE],
+                        execute: () => {
+                            this.dispatcher.dispatch(<TodoPayload>{
+                                actionType: TodoActions.DELETE,
+                                name: this.name
+                            });
+                        }
+                    })
+                }
 
-            if (fiftyFifty()) {
-                this.actions.push({
-                    name: TodoActions[TodoActions.TOGGLE_BOLD],
-                    execute: () => {
-                        this.dispatcher.dispatch(<TodoPayload>{
-                            actionType: TodoActions.TOGGLE_BOLD,
-                            name: this.name
-                        });
-                    }
-                })
-            }
+                if (fiftyFifty()) {
+                    this.actions.push({
+                        name: TodoActions[TodoActions.TOGGLE_BOLD],
+                        execute: () => {
+                            this.dispatcher.dispatch(<TodoPayload>{
+                                actionType: TodoActions.TOGGLE_BOLD,
+                                name: this.name
+                            });
+                        }
+                    })
+                }
 
-            if (fiftyFifty()) {
-                this.actions.push({
-                    name: TodoActions[TodoActions.TOGGLE_DONE],
-                    execute: () => {
-                        this.dispatcher.dispatch(<TodoPayload>{
-                            actionType: TodoActions.TOGGLE_DONE,
-                            name: this.name
-                        });
-                    }
-                })
+                if (fiftyFifty()) {
+                    this.actions.push({
+                        name: TodoActions[TodoActions.TOGGLE_DONE],
+                        execute: () => {
+                            this.dispatcher.dispatch(<TodoPayload>{
+                                actionType: TodoActions.TOGGLE_DONE,
+                                name: this.name
+                            });
+                        }
+                    })
+                }
             }
         }
 
@@ -119,19 +124,27 @@ namespace AngularFlux.Services {
     function randomDelay(callback: (...args) => any): void {
         setTimeout(callback, Math.random() * 5000);
     }
+    function cloneTodo(dispatcher: Flux.Dispatcher<TodoPayload>, todo: ITodo): ITodo {
+        return new Todo(dispatcher, todo.name, todo.isDone, todo.isBold, todo.isUpdating, todo.getTodoActions());
+    }
+    function todoStateCloner(dispatcher: Flux.Dispatcher<TodoPayload>, state: TodoStoreState): TodoStoreState {
+        return state.map(x => cloneTodo(dispatcher, x));
+    }
 
     class TodoStore extends Store<TodoStoreState> implements ITodoStore {
+        private stateCloner: (state: TodoStoreState) => TodoStoreState;
 
         constructor(private todoDispatcher: Flux.Dispatcher<TodoPayload>) {
             super([]);
             this.todoDispatcher.register((payload) => this.on(payload));
+            this.stateCloner = (state) => todoStateCloner(this.todoDispatcher, state);
         }
 
         private on(payload: TodoPayload) {
-            if (isTodoCreatePayload(payload)) return this.triggerStateChanged(() => this.onCreate(payload));
-            if (isTodoDeletePayload(payload)) return this.triggerStateChanged(() => this.onDelete(payload));
-            if (isTodoToggleBoldPayload(payload)) return this.triggerStateChanged(() => this.onToggleBold(payload));
-            if (isTodoToggleDonePayload(payload)) return this.triggerStateChanged(() => this.onToggleDone(payload));
+            if (isTodoCreatePayload(payload)) return this.triggerStateChanged(this.stateCloner, () => this.onCreate(payload));
+            if (isTodoDeletePayload(payload)) return this.triggerStateChanged(this.stateCloner, () => this.onDelete(payload));
+            if (isTodoToggleBoldPayload(payload)) return this.triggerStateChanged(this.stateCloner, () => this.onToggleBold(payload));
+            if (isTodoToggleDonePayload(payload)) return this.triggerStateChanged(this.stateCloner, () => this.onToggleDone(payload));
         }
 
         private onToggleBold(payload: ITodoToggleBoldPayload) {
@@ -156,6 +169,7 @@ namespace AngularFlux.Services {
         private onToggleDone(payload: ITodoToggleDonePayload) {
             if (payload.actionType === TodoActions.TOGGLE_DONE_COMPLETE) {
                 this.setIsUpdating(payload.name, false);
+                return;
             }
             
             randomDelay(() => this.todoDispatcher.dispatch(<TodoPayload>{
