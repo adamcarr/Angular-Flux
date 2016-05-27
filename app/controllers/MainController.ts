@@ -10,23 +10,16 @@ namespace AngularFlux.Controllers {
     class MainController {
         constructor(
             $scope: IMainControllerScope, 
-            todoDispatcher: Flux.Dispatcher<AngularFlux.Services.TodoPayload>
+            todoDispatcher: Flux.Dispatcher<AngularFlux.Services.TodoPayload>,
+            todoStore: AngularFlux.Services.ITodoStore
         ) {
             $scope.greeting = "Amazing to-dos!!!";
             
-            const onStateUpdated = todoDispatcher.register((payload: AngularFlux.Services.ITodoStateUpdatedPayload) => {
-                if (payload.actionType !== AngularFlux.Services.TodoActions.STATE_UPDATED) {
-                    return;
-                }
-                
+            todoStore.registerStateChanged((state: AngularFlux.Services.TodoStoreState) => {
                 $scope.$apply(() => {
-                    $scope.todos = payload.state;
+                    $scope.todos = state;
                 });
-            });
-            
-            $scope.$on('$destroy', () => {
-                todoDispatcher.unregister(onStateUpdated);
-            })
+            }, $scope);
             
             $scope.create = () => {
                 if ($scope.newTodoName) {

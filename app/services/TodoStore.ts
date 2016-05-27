@@ -12,8 +12,10 @@ namespace AngularFlux.Services {
         execute: () => void;
     }
 
-    export interface ITodoStore {
-        state: ITodo[];
+    
+
+    export type TodoStoreState = ITodo[];
+    export interface ITodoStore extends IStore<TodoStoreState> {
     }
 
     function fiftyFifty(): boolean {
@@ -80,8 +82,7 @@ namespace AngularFlux.Services {
         DELETE,
         DELETE_COMPLETE,
         CREATE,
-        CREATE_COMPLETE,
-        STATE_UPDATED
+        CREATE_COMPLETE
     }
 
     export interface ITodoToggleDonePayload extends TodoPayload {
@@ -121,22 +122,18 @@ namespace AngularFlux.Services {
         setTimeout(callback, Math.random() * 5000);
     }
 
-    class TodoStore implements ITodoStore {
-        state: ITodo[] = [];
-        todoDispatcher: Flux.Dispatcher<TodoPayload>;
+    class TodoStore extends Store<TodoStoreState> implements ITodoStore {
 
-        constructor() {
-            angular.injector(['services']).invoke((todoDispatcher: Flux.Dispatcher<TodoPayload>) => {
-                this.todoDispatcher = todoDispatcher;
-                this.todoDispatcher.register((payload) => this.on(payload));
-            });
+        constructor(private todoDispatcher: Flux.Dispatcher<TodoPayload>) {
+            super([]);
+            this.todoDispatcher.register((payload) => this.on(payload));
         }
 
         private on(payload: TodoPayload) {
-            if (isTodoCreatePayload(payload)) return this.triggerStateUpdated(() => this.onCreate(payload));
-            if (isTodoDeletePayload(payload)) return this.triggerStateUpdated(() => this.onDelete(payload));
-            if (isTodoToggleBoldPayload(payload)) return this.triggerStateUpdated(() => this.onToggleBold(payload));
-            if (isTodoToggleDonePayload(payload)) return this.triggerStateUpdated(() => this.onToggleDone(payload));
+            if (isTodoCreatePayload(payload)) return this.triggerStateChanged(() => this.onCreate(payload));
+            if (isTodoDeletePayload(payload)) return this.triggerStateChanged(() => this.onDelete(payload));
+            if (isTodoToggleBoldPayload(payload)) return this.triggerStateChanged(() => this.onToggleBold(payload));
+            if (isTodoToggleDonePayload(payload)) return this.triggerStateChanged(() => this.onToggleDone(payload));
         }
 
         private onToggleBold(payload: ITodoToggleBoldPayload) {
@@ -216,17 +213,7 @@ namespace AngularFlux.Services {
                 }
             });
         }
-        
-        private triggerStateUpdated(callback: Function) {
-            callback();
-            setTimeout(() => {
-                this.todoDispatcher.dispatch(<ITodoStateUpdatedPayload>{
-                    actionType: TodoActions.STATE_UPDATED,
-                    state: this.state
-                });
-            }, 0);
-        }
     }
-    
-    new TodoStore();
+
+    AngularFlux.Services.Module.service('todoStore', TodoStore);
 }

@@ -35,7 +35,7 @@
                     <span ng-class="{ 'updating': todo.isUpdating, 'bold': todo.isBold, 'done': todo.isDone }">{{todo.name}}</span>
                     <ul>
                         <li ng-repeat="action in todo.getTodoActions() track by action.name">
-                            <button ng-click="action.execute()">{{action.name}}</button>
+                            <button ng-disabled="todo.isUpdating" ng-click="action.execute()">{{action.name}}</button>
                         </li>
                     </ul>
                 </div>
